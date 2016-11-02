@@ -21,7 +21,10 @@
       createCanvas(windowWidth, windowHeight);
       noStroke();
 
-      interval = new Worker("interval.js");
+      var blob = new Blob(["setInterval(function() { postMessage(0) }, 100);"]);
+      var blobURL = URL.createObjectURL(blob);
+
+      interval = new Worker(blobURL);
       interval.onmessage = function() {
         if (timer) {
           if (timer > millis()) {

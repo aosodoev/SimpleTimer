@@ -1,4 +1,4 @@
 # SimpleTimer
 Simple Timer using p5.js
 
-https://aosodoev.github.io/SimpleTimer/
+https://aosodoev.github.io/simple-timer/

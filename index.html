@@ -31,7 +31,7 @@
             seconds = timer = 0;
             envelope.play(osc, 0, 0.1);
             if (("Notification" in window) && Notification.permission === "granted") {
-              var notification = new Notification("Pomodoro complete! WELL DONE!");
+              var notification = new Notification("Session complete! WELL DONE!");
             }
           }
         } else if (seconds > 0) {

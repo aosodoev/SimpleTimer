@@ -1,0 +1,144 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>SimpleTimer</title>
+
+  <script src="//cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.4/p5.min.js"></script> 
+  <script src="//cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.4/addons/p5.sound.min.js"></script>
+
+  <script>
+
+    var seconds = 0, pseconds, secondsStart, timer = 0, ding, interval, frto, osc, envelope;
+
+    function formatSeconds(seconds) {
+      m = Math.floor(seconds / 60);
+      s = Math.floor(seconds) % 60;
+      return (m < 10 ? "0" : "" ) + m + ":" + (s < 10 ? "0" : "") + s;
+    }
+
+    function setup() {
+      
+      createCanvas(windowWidth, windowHeight);
+      noStroke();
+
+      interval = new Worker("interval.js");
+      interval.onmessage = function() {
+        if (timer) {
+          if (timer > millis()) {
+            seconds = (timer - millis())/1000;
+            document.title = formatSeconds(seconds) + ' - SimpleTimer';
+          } else {
+            seconds = timer = 0;
+            envelope.play(osc, 0, 0.1);
+            if (("Notification" in window) && Notification.permission === "granted") {
+              var notification = new Notification("Pomodoro complete! WELL DONE!");
+            }
+          }
+        } else if (seconds > 0) {
+          frameRate(60);
+          timer = millis() + seconds*1000;
+          if (frto) {
+            clearTimeout(frto);
+          }
+          frto = setTimeout(function(){
+            frameRate(1); frto = null;
+          }, 2000);
+        }
+      };
+
+      if (("Notification" in window) && Notification.permission !== 'denied' && Notification.permission !== 'granted') {
+        Notification.requestPermission();
+      }
+
+      osc = new p5.SinOsc();
+      
+      // Instantiate the envelope
+      envelope = new p5.Env();
+
+      // set attackTime, decayTime, sustainRatio, releaseTime
+      envelope.setADSR(0.001, 0.5, 0.1, 0.5);
+
+      // set attackLevel, releaseLevel
+      envelope.setRange(1, 0);
+
+      osc.freq(midiToFreq(65));
+
+      osc.amp(envelope);
+      osc.start();
+    }
+
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+    }
+
+    function drawScale(seconds, x, y, w, h) {
+      
+      translate(x, y);
+      fill(255);
+      triangle(w/2, h/2 + w/100, w/2 - w/20, h/2 + w/10, w/2 + w/20, h/2 + w/10);  
+      resetMatrix();
+
+      textAlign(CENTER, BOTTOM);
+      textSize(w/15);
+      
+      for (var i = -15; i <= 15; i++) {
+        
+        var minutes = (60 + i + Math.floor(seconds/60)) % 60;
+        if (minutes <= 55) {
+          var angle = Math.PI*(minutes - seconds/60)/30;
+          var s = Math.sin(angle), c = Math.cos(angle);
+          var mark = (minutes % 5 == 0);
+          
+          translate(x + w * (0.5 + 0.5*s), y);
+          scale(c, 1);
+          fill(255*c);
+          rect(mark ? -w/100 : -w/200, h/2, mark ? w/50 : w/100, mark ? -w/10 : -w/20); 
+
+          if (mark) {
+            text(minutes, 0, h/2 - ((minutes % 5 == 0) ? w/10 : w/20));
+          }
+        }
+        resetMatrix();
+      }
+      
+    }
+
+    function getAngle() {
+      var x = mouseIsPressed ? mouseX : touchX;
+      return 60*240*Math.acos((x - width/2)/width/2)/Math.PI;
+    }
+
+    function mousePressed() {
+      pseconds = seconds;
+      secondsStart = getAngle();
+    }
+
+    function touchStarted() {
+      mousePressed();
+    }
+
+    function mouseWheel(event) {
+      timer = 0;
+      seconds = Math.max(0, Math.min(seconds + event.delta + event.deltaX*2, 60*55));
+      return false;
+    }
+
+    function draw() {
+      if (mouseIsPressed || touchIsDown) {
+        timer = 0;
+        seconds = Math.max(0, Math.min(pseconds + getAngle() - secondsStart, 60*55));
+      }
+      background(0);
+      drawScale(seconds, width/10, 0, 8*width/10, height);
+      document.title = formatSeconds(seconds) + ' - SimpleTimer';
+    }
+
+  </script>
+
+  <!-- this line removes any default padding and style. you might only need one of these values set. -->
+  <style> body {padding: 0; margin: 0;} </style>
+</head>
+
+<body>
+</body>
+</html>

@@ -143,7 +143,7 @@
     }
 
     function draw() {
-      if (mouseIsPressed || touchIsDown) {
+      if (mouseIsPressed) { // || touchIsDown) {
         timerStarted = false;
         seconds = Math.max(0, Math.min(pseconds + getAngle() - secondsStart, 60*55));
       }
